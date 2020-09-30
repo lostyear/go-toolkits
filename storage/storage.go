@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"database/sql"
 	"log"
 	"strings"
 	"time"
@@ -33,7 +32,7 @@ type Config struct {
 }
 
 // TODO: move to tooltips repo
-func InitDatabase(config Config) *sql.DB {
+func InitDatabase(config Config) *gorm.DB {
 	// 初始化数据库日志
 	logWriter, err := rlogs.New(
 		config.LogPath,
@@ -82,6 +81,9 @@ func InitDatabase(config Config) *sql.DB {
 	db, err := gorm.Open(conn, &gorm.Config{
 		Logger: ormlogger,
 	})
+	if err != nil {
+		log.Fatalf("open db connection failed! Error: %s\n", err)
+	}
 
 	// 设置读写分离
 	if len(config.ReaderDSN) > 0 {
@@ -94,6 +96,9 @@ func InitDatabase(config Config) *sql.DB {
 
 	// 设置链接池
 	sqldb, err := db.DB()
+	if err != nil {
+		log.Fatalf("get db sql connection failed! Error: %s\n", err)
+	}
 	sqldb.SetMaxIdleConns(config.MaxIdleConns)
 	sqldb.SetMaxOpenConns(config.MaxOpenConns)
 	sqldb.SetConnMaxLifetime(time.Duration(config.ConnMaxLifeSeconds) * time.Second)
@@ -103,11 +108,15 @@ func InitDatabase(config Config) *sql.DB {
 		log.Fatalf("connect to database failed when ping the server! Error: %s\n", err)
 	}
 
-	return sqldb
+	return db
 }
 
-func Close(db *sql.DB) {
-	if err := db.Close(); err != nil {
+func Close(db *gorm.DB) {
+	sqldb, err := db.DB()
+	if err != nil {
+		log.Printf("get db sql connection failed! Error: %s\n", err)
+	}
+	if err := sqldb.Close(); err != nil {
 		log.Printf("Close database error: %s\n", err.Error())
 	}
 }
