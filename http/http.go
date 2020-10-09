@@ -9,6 +9,7 @@ import (
 
 	rlogs "github.com/lestrrat-go/file-rotatelogs"
 	"github.com/lostyear/gin-middlewares/timeout"
+	"github.com/lostyear/gin-middlewares/recovery"
 )
 
 type RegisterHandler func(*gin.RouterGroup)
@@ -28,17 +29,17 @@ type Config struct {
 func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.HandlersChain) {
 	eng := gin.New()
 
-	//TODO: graceful recovery
-	eng.Use(gin.Recovery())
+	eng.Use(recovery.Recovery())
 
+	//TODO: use request log middleware
 	//TODO: use metric middleware
-	eng.Use(middlewares...)
 	eng.Use(createLogger(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
 	eng.Use(timeout.TimeoutMiddleware(
 		time.Duration(cfg.HTTPTimeoutMilliseSecond)*time.Millisecond,
 		"timeout",
 	))
 
+	eng.Use(middlewares...)
 	handler(eng.Group(""))
 
 	GracefulRun(
