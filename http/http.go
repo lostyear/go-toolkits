@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	rlogs "github.com/lestrrat-go/file-rotatelogs"
-	"github.com/lostyear/gin-middlewares/timeout"
 	"github.com/lostyear/gin-middlewares/recovery"
+	"github.com/lostyear/gin-middlewares/timeout"
 )
 
 type RegisterHandler func(*gin.RouterGroup)
@@ -36,7 +36,7 @@ func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.Handle
 	eng.Use(createLogger(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
 	eng.Use(timeout.TimeoutMiddleware(
 		time.Duration(cfg.HTTPTimeoutMilliseSecond)*time.Millisecond,
-		"timeout",
+		`{"status":"timeout","msg":"Gateway Timeout"}`,
 	))
 
 	eng.Use(middlewares...)
