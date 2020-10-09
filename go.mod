@@ -10,7 +10,7 @@ require (
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/lestrrat-go/strftime v1.0.3 // indirect
-	github.com/lostyear/gin-middlewares v0.0.4
+	github.com/lostyear/gin-middlewares v0.0.3
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/tebeka/strftime v0.1.5 // indirect
 	github.com/toolkits/pkg v1.1.3
