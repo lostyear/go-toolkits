@@ -9,6 +9,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 	"gorm.io/plugin/dbresolver"
 
 	rlogs "github.com/lestrrat-go/file-rotatelogs"
@@ -18,6 +19,9 @@ type Config struct {
 	Type      string
 	WriterDSN string
 	ReaderDSN string
+
+	TablePrefix   string
+	SingularTable bool
 
 	LogPath             string
 	LogLevel            string
@@ -80,6 +84,10 @@ func InitDatabase(config Config) *gorm.DB {
 	// 启动数据库链接
 	db, err := gorm.Open(conn, &gorm.Config{
 		Logger: ormlogger,
+		NamingStrategy: schema.NamingStrategy{
+			TablePrefix:   config.TablePrefix,
+			SingularTable: config.SingularTable,
+		},
 	})
 	if err != nil {
 		log.Fatalf("open db connection failed! Error: %s\n", err)
