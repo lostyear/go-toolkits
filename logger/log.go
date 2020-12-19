@@ -14,8 +14,14 @@ type Config struct {
 	KeepDays uint
 }
 
+const (
+	defaultLogFlags = log.Llongfile | log.Ldate | log.Ltime | log.Lmicroseconds
+)
+
+var StdoutLogger *log.Logger = log.New(os.Stdout, "[LOG]", defaultLogFlags)
+
 func init() {
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 	log.SetPrefix("[ERROR]")
 	log.SetFlags(log.Llongfile | log.Ldate | log.Ltime | log.Lmicroseconds)
 }
