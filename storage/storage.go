@@ -35,7 +35,6 @@ type Config struct {
 	MaxIdleConns         int
 }
 
-// TODO: move to tooltips repo
 func InitDatabase(config Config) *gorm.DB {
 	// 初始化数据库日志
 	logWriter, err := rlogs.New(

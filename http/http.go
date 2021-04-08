@@ -29,15 +29,15 @@ type Config struct {
 func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.HandlersChain) {
 	eng := gin.New()
 
+	//TODO: use metric middleware
+	//TODO: use request log middleware
+	eng.Use(createLogger(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
+
 	eng.Use(timeout.TimeoutMiddleware(
 		time.Duration(cfg.HTTPTimeoutMilliseSecond)*time.Millisecond,
 		`{"status":"timeout","msg":"Gateway Timeout"}`,
 	))
 	eng.Use(recovery.Recovery())
-
-	//TODO: use request log middleware
-	eng.Use(createLogger(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
-	//TODO: use metric middleware
 
 	eng.Use(middlewares...)
 	handler(eng.Group(""))

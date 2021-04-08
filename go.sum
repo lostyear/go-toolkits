@@ -40,8 +40,8 @@ github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible h1:Y6sqxHMyB1D2YSzWkL
 github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible/go.mod h1:ZQnN8lSECaebrkQytbHj4xNgtg8CR7RYXnPok8e0EHA=
 github.com/lestrrat-go/strftime v1.0.3 h1:qqOPU7y+TM8Y803I8fG9c/DyKG3xH/xkng6keC1015Q=
 github.com/lestrrat-go/strftime v1.0.3/go.mod h1:E1nN3pCbtMSu1yjSVeyuRFVm/U0xoR76fd03sz+Qz4g=
-github.com/lostyear/gin-middlewares v0.0.4 h1:QCO9A4oqlfi/fx3cnoK6eA7r3qv/s00WFtTG3NaTa4s=
-github.com/lostyear/gin-middlewares v0.0.4/go.mod h1:ZP7duSO0RzztIjkJ+dLYRig5sWtk0wHegQ8qGdDtgNg=
+github.com/lostyear/gin-middlewares v0.0.3 h1:R1DeFOwGB61IUamjtg7t35qBYolcQaaI9NlnGzfIqgM=
+github.com/lostyear/gin-middlewares v0.0.3/go.mod h1:ZP7duSO0RzztIjkJ+dLYRig5sWtk0wHegQ8qGdDtgNg=
 github.com/mattn/go-isatty v0.0.12 h1:wuysRhFDzyxgEmMf5xjvJ2M9dZoWAXNNr5LSBS7uHXY=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
 github.com/mattn/go-sqlite3 v1.14.3 h1:j7a/xn1U6TKA/PHHxqZuzh64CdtRc7rU9M+AvkOl5bA=

@@ -29,7 +29,7 @@ func init() {
 func Init(config Config) {
 	backend, err := logger.NewFileBackend(config.Path)
 	if err != nil {
-		log.Fatal("create log backend error: %s\n", err)
+		log.Fatal("create log backend error: %s\n", err.Error())
 	}
 	backend.SetRotateByHour(true)
 	backend.SetKeepHours(config.KeepDays * 24)
