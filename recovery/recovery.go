@@ -15,7 +15,7 @@ var (
 	slash     = []byte("/")
 )
 
-func cronRecovery() {
+func Recovery() {
 	if err := recover(); err != nil {
 		errStack := stack(3)
 		log.Printf("[Recovery] panic recoverd: error stack: %s", errStack)
