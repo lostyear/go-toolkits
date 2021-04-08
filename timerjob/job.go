@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	"github.com/lostyear/go-toolkits/recovery"
 )
 
 type TimerJob interface {
@@ -37,7 +38,7 @@ func (j *RedisLockerJob) Run() {
 		case <-j.ticker.C:
 			wg.Add(1)
 			go func() {
-				// defer cronRecovery()
+				defer recovery.Recovery()
 				num := rand.Int()
 				j.lock(num)
 				j.Worker()
@@ -74,6 +75,7 @@ type BaseTimerJob struct {
 }
 
 func (j *BaseTimerJob) Run() {
+	j.Worker()
 	j.stopCh = make(chan struct{})
 	j.ticker = time.NewTicker(j.Interval)
 
@@ -83,7 +85,7 @@ func (j *BaseTimerJob) Run() {
 		case <-j.ticker.C:
 			wg.Add(1)
 			go func() {
-				// defer cronRecovery()
+				defer recovery.Recovery()
 				j.Worker()
 				wg.Done()
 			}()

@@ -2,6 +2,8 @@ package timerjob
 
 import (
 	"sync"
+
+	"github.com/lostyear/go-toolkits/recovery"
 )
 
 // var logger logr.Logger
@@ -19,7 +21,7 @@ func (l *TimerJobList) Start() {
 	for _, job := range l.Jobs {
 		l.Add(1)
 		go func(j TimerJob) {
-			// defer cronRecovery()
+			defer recovery.Recovery()
 			defer l.Done()
 
 			j.Run()
