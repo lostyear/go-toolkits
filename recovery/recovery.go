@@ -15,6 +15,7 @@ var (
 	slash     = []byte("/")
 )
 
+// Recovery is a recovery which can print stack
 func Recovery() {
 	if err := recover(); err != nil {
 		errStack := stack(3)

@@ -15,32 +15,34 @@ import (
 	rlogs "github.com/lestrrat-go/file-rotatelogs"
 )
 
+// Config storage config
 type Config struct {
-	Type      string
-	WriterDSN string
-	ReaderDSN string
+	Type      string // storage type, sqlite or mysql
+	WriterDSN string // storage writer
+	ReaderDSN string // storage reader
 
-	TablePrefix   string
-	SingularTable bool
+	TablePrefix   string // prefix for tables
+	SingularTable bool   // is tablename has -s suffix
 
-	LogPath             string
-	LogLevel            string
-	LogMaxDays          uint
-	LogRotationHours    uint
-	LogSlowMicroSeconds uint
+	LogPath             string // db log file path
+	LogLevel            string // db log level
+	LogMaxDays          uint   // db log keep days
+	LogRotationHours    uint   // db log rotate time
+	LogSlowMicroSeconds uint   // db slow log time
 
-	ConnMaxLifeSeconds   uint
-	TimeoutMilliseSecond uint
-	MaxOpenConns         int
-	MaxIdleConns         int
+	ConnMaxLifeSeconds   uint // db connection max keep time
+	TimeoutMilliseSecond uint // db request timeout
+	MaxOpenConns         int  // max db connections
+	MaxIdleConns         int  // free db connections
 }
 
+// InitDatabase init db engine by config
 func InitDatabase(config Config) *gorm.DB {
 	// 初始化数据库日志
 	logWriter, err := rlogs.New(
-		config.LogPath,
-		rlogs.WithMaxAge(time.Duration(config.LogMaxDays)*24*time.Hour),
+		config.LogPath+".%Y%m%d%H",
 		rlogs.WithRotationTime(time.Duration(config.LogRotationHours)*time.Hour),
+		rlogs.WithMaxAge(time.Duration(config.LogMaxDays)*24*time.Hour),
 	)
 	if err != nil {
 		log.Fatalf("create db log failed! Error: %s\n", err)
@@ -118,6 +120,7 @@ func InitDatabase(config Config) *gorm.DB {
 	return db
 }
 
+// Close db
 func Close(db *gorm.DB) {
 	sqldb, err := db.DB()
 	if err != nil {

@@ -6,18 +6,14 @@ import (
 	"github.com/lostyear/go-toolkits/recovery"
 )
 
-// var logger logr.Logger
-
-// func init() {
-// 	logger = commons.LoggerWithName("manager-logger")
-// }
-
-type TimerJobList struct {
+// List is a job list
+type List struct {
 	sync.WaitGroup
 	Jobs []TimerJob
 }
 
-func (l *TimerJobList) Start() {
+// Start all jobs in the list
+func (l *List) Start() {
 	for _, job := range l.Jobs {
 		l.Add(1)
 		go func(j TimerJob) {
@@ -29,13 +25,15 @@ func (l *TimerJobList) Start() {
 	}
 }
 
-func (l *TimerJobList) Stop() {
+// Stop run job and wait for all job done
+func (l *List) Stop() {
 	for _, job := range l.Jobs {
 		job.Stop()
 	}
 	l.Wait()
 }
 
-func (l *TimerJobList) AddJob(job ...TimerJob) {
+// AddJob to the list
+func (l *List) AddJob(job ...TimerJob) {
 	l.Jobs = append(l.Jobs, job...)
 }
