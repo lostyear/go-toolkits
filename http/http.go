@@ -19,6 +19,8 @@ import (
 // RegisterHandler used for start func, it shoud register all handlers
 type RegisterHandler func(*gin.Engine)
 
+var emptyHandler func(*gin.Context)
+
 // NOTE: 信号处理需要在外部实现，reload config 需要有个读写锁
 
 // Config http server
@@ -96,6 +98,6 @@ func GetMetricMiddleWare(metric string) gin.HandlerFunc {
 		prommetric.StartDefaultServer()
 		return prommetric.MetricHandler()
 	default:
-		return nil
+		return emptyHandler
 	}
 }
