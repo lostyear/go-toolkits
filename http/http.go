@@ -19,8 +19,6 @@ import (
 // RegisterHandler used for start func, it shoud register all handlers
 type RegisterHandler func(*gin.Engine)
 
-var emptyHandler func(*gin.Context)
-
 // NOTE: 信号处理需要在外部实现，reload config 需要有个读写锁
 
 // Config http server
@@ -36,6 +34,10 @@ type Config struct {
 	ReadTimeoutMilliseSecond  int
 	WriteTimeoutMilliseSecond int
 }
+
+var (
+	emptyHandler = func(*gin.Context) {}
+)
 
 // StartHTTPServer run http server with config, handler should have all route regist action,
 // and all middlewares will be used.
