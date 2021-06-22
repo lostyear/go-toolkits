@@ -116,4 +116,4 @@ func StartDefaultServer() {
 
 type emptyWriter struct{}
 
-func (emptyWriter) Write([]byte) (int, error)
+func (emptyWriter) Write([]byte) (int, error) { return 0, nil }
