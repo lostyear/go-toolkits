@@ -18,10 +18,19 @@ func NewOKResonseData(data interface{}) *DefaultResponse {
 	}
 }
 
-// NewErrorResponse create a new response by HTTPError
-func NewErrorResponse(err HTTPError, data interface{}) *DefaultResponse {
+// NewHTTPErrorResponse create a new response by HTTPError
+func NewHTTPErrorResponse(err HTTPError, data interface{}) *DefaultResponse {
 	return &DefaultResponse{
 		Status:  err.Code(),
+		Message: err.Error(),
+		Data:    data,
+	}
+}
+
+// NewErrorResponse create a new response by HTTPError
+func NewErrorResponse(err error, data interface{}) *DefaultResponse {
+	return &DefaultResponse{
+		Status:  http.StatusInternalServerError,
 		Message: err.Error(),
 		Data:    data,
 	}
