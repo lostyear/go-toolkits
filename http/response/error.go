@@ -1,7 +1,9 @@
 package response
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 )
 
 // HTTPError is a error type support for http request
@@ -29,6 +31,53 @@ func NewError(code int, msg string, err error) HTTPError {
 		code:    code,
 		message: msg,
 		err:     err,
+	}
+}
+
+var (
+	// ErrServerError is error of http internal server error
+	ErrServerError = errors.New("Internal Server Error")
+	// ErrNotFound    is error of http not found
+	ErrNotFound = errors.New("Not Found")
+	// ErrForbidden   is error of http forbidden
+	ErrForbidden = errors.New("Forbidden")
+	// ErrBadRequest  is error of http bad request
+	ErrBadRequest = errors.New("Bad Request")
+)
+
+// NewServerError create a response which show internal server error
+func NewServerError(msg string) HTTPError {
+	return httpError{
+		code:    http.StatusInternalServerError,
+		message: msg,
+		err:     ErrServerError,
+	}
+}
+
+// NewNotFoundError create a response which show not found
+func NewNotFoundError(msg string) HTTPError {
+	return httpError{
+		code:    http.StatusNotFound,
+		message: msg,
+		err:     ErrNotFound,
+	}
+}
+
+// NewForbiddenError create a response which show forbidden
+func NewForbiddenError(msg string) HTTPError {
+	return httpError{
+		code:    http.StatusForbidden,
+		message: msg,
+		err:     ErrForbidden,
+	}
+}
+
+// NewBadRequestError create a response which show bad request
+func NewBadRequestError(msg string) HTTPError {
+	return httpError{
+		code:    http.StatusBadRequest,
+		message: msg,
+		err:     ErrBadRequest,
 	}
 }
 

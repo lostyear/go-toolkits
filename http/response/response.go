@@ -38,33 +38,20 @@ func NewErrorResponse(err error, data interface{}) *DefaultResponse {
 
 // NewServerErrorResponse create a response which show internal server error
 func NewServerErrorResponse(msg string, data interface{}) *DefaultResponse {
-	return &DefaultResponse{
-		Status:  http.StatusInternalServerError,
-		Message: msg,
-		Data:    data,
-	}
+	return NewErrorResponse(NewServerError(msg), data)
 }
 
 // NewNotFoundResponse create a response which show not found
 func NewNotFoundResponse(msg string) *DefaultResponse {
-	return &DefaultResponse{
-		Status:  http.StatusNotFound,
-		Message: msg,
-	}
+	return NewErrorResponse(NewNotFoundError(msg), nil)
 }
 
 // NewForbiddenResponse create a response which show forbidden
 func NewForbiddenResponse(msg string) *DefaultResponse {
-	return &DefaultResponse{
-		Status:  http.StatusForbidden,
-		Message: msg,
-	}
+	return NewErrorResponse(NewForbiddenError(msg), nil)
 }
 
 // NewBadRequestResponse create a response which show bad request
 func NewBadRequestResponse(msg string) *DefaultResponse {
-	return &DefaultResponse{
-		Status:  http.StatusBadRequest,
-		Message: msg,
-	}
+	return NewErrorResponse(NewBadRequestError(msg), nil)
 }
