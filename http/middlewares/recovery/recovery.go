@@ -97,8 +97,8 @@ func WithWriter(out io.Writer) gin.HandlerFunc {
 					c.JSON(
 						http.StatusInternalServerError,
 						gin.H{
-							"status": "error",
-							"msg":    fmt.Sprintf("%s", err),
+							"status":  http.StatusInternalServerError,
+							"message": fmt.Sprintf("%v", err),
 						},
 					)
 					c.Abort()

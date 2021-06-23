@@ -47,11 +47,11 @@ func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.Handle
 
 	eng.Use(GetMetricMiddleWare(cfg.Metric))
 	eng.Use(requestlog.RequestFileLogMiddleware(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
-	eng.Use(recovery.Recovery())
 	eng.Use(timeout.Middleware(
 		time.Duration(cfg.HTTPTimeoutMilliseSecond)*time.Millisecond,
 		`{"status":"timeout","msg":"Gateway Timeout"}`,
 	))
+	eng.Use(recovery.Recovery())
 
 	eng.Use(middlewares...)
 	eng.NoRoute(noRouteHandler)
