@@ -57,34 +57,36 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routin
 		}
 		c.Writer = tw
 
-		go handler(c, done)
+		go func() {
+			select {
+			case <-done:
+				tw.mu.Lock()
+				defer tw.mu.Unlock()
 
-		select {
-		case <-done:
-			tw.mu.Lock()
-			defer tw.mu.Unlock()
-
-			dst := w.Header()
-			for k, vv := range tw.h {
-				dst[k] = vv
-			}
-
-			if !tw.wroteHeader {
-				if w.Status() > 0 {
-					tw.code = w.Status()
-				} else {
-					tw.code = http.StatusOK
+				dst := w.Header()
+				for k, vv := range tw.h {
+					dst[k] = vv
 				}
+
+				if !tw.wroteHeader {
+					if w.Status() > 0 {
+						tw.code = w.Status()
+					} else {
+						tw.code = http.StatusOK
+					}
+				}
+				w.WriteHeader(tw.code)
+				w.Write(tw.wbuf.Bytes())
+			case <-ctx.Done():
+				tw.mu.Lock()
+				defer tw.mu.Unlock()
+				w.WriteHeader(http.StatusGatewayTimeout)
+				w.WriteString(timeoutMsg)
+				tw.timedOut = true
 			}
-			w.WriteHeader(tw.code)
-			w.Write(tw.wbuf.Bytes())
-		case <-ctx.Done():
-			tw.mu.Lock()
-			defer tw.mu.Unlock()
-			w.WriteHeader(http.StatusGatewayTimeout)
-			w.WriteString(timeoutMsg)
-			tw.timedOut = true
-		}
+		}()
+
+		handler(c, done)
 	}
 }
 
