@@ -41,10 +41,10 @@ var (
 	emptyHandler = func(*gin.Context) {}
 )
 
-// StartHTTPServer run http server with config, handler should have all route regist action,
+// StartServer run http server with config, handler should have all route regist action,
 // and all middlewares will be used.
 // also it has some default middlewares use
-func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.HandlersChain) error {
+func StartServer(cfg Config, handler RegisterHandler, middlewares gin.HandlersChain) error {
 	eng := gin.New()
 
 	eng.Use(GetMetricMiddleWare(cfg.Metric))
@@ -68,6 +68,7 @@ func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.Handle
 	return srv.ListenAndServe()
 }
 
+// StopServer stop the server with timeout
 func StopServer(timeout time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
