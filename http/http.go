@@ -49,7 +49,7 @@ func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.Handle
 	eng.Use(requestlog.RequestFileLogMiddleware(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
 	eng.Use(timeout.Middleware(
 		time.Duration(cfg.HTTPTimeoutMilliseSecond)*time.Millisecond,
-		`{"status":"timeout","msg":"Gateway Timeout"}`,
+		`{"status":504,"message":"Timeout"}`,
 	))
 	eng.Use(recovery.Recovery())
 

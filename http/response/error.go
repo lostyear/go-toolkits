@@ -45,7 +45,7 @@ var (
 	ErrBadRequest = errors.New("Bad Request")
 )
 
-// NewSimpleError create a response which show internal server error
+// NewSimpleError create a http error which show internal server error
 func NewSimpleError(err error) HTTPError {
 	return httpError{
 		code:    http.StatusInternalServerError,
@@ -54,7 +54,17 @@ func NewSimpleError(err error) HTTPError {
 	}
 }
 
-// NewServerError create a response which show internal server error
+// NewSimpleErrorf create a http error which show internal server error
+func NewSimpleErrorf(format string, values ...interface{}) HTTPError {
+	err := fmt.Errorf(format, values...)
+	return httpError{
+		code:    http.StatusInternalServerError,
+		message: err.Error(),
+		err:     err,
+	}
+}
+
+// NewServerError create a http error which show internal server error
 func NewServerError(msg string) HTTPError {
 	return httpError{
 		code:    http.StatusInternalServerError,
@@ -63,7 +73,7 @@ func NewServerError(msg string) HTTPError {
 	}
 }
 
-// NewNotFoundError create a response which show not found
+// NewNotFoundError create a http error which show not found
 func NewNotFoundError(msg string) HTTPError {
 	return httpError{
 		code:    http.StatusNotFound,
@@ -72,7 +82,7 @@ func NewNotFoundError(msg string) HTTPError {
 	}
 }
 
-// NewForbiddenError create a response which show forbidden
+// NewForbiddenError create a http error which show forbidden
 func NewForbiddenError(msg string) HTTPError {
 	return httpError{
 		code:    http.StatusForbidden,
@@ -81,7 +91,7 @@ func NewForbiddenError(msg string) HTTPError {
 	}
 }
 
-// NewBadRequestError create a response which show bad request
+// NewBadRequestError create a http error which show bad request
 func NewBadRequestError(msg string) HTTPError {
 	return httpError{
 		code:    http.StatusBadRequest,

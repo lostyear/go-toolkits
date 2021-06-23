@@ -102,7 +102,6 @@ func WithWriter(out io.Writer) gin.HandlerFunc {
 						},
 					)
 					c.Abort()
-					// c.AbortWithStatus(http.StatusInternalServerError)
 				}
 			}
 		}()

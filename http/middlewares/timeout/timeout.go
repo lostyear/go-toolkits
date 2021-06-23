@@ -15,56 +15,56 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type routineHandlerFunc func(*gin.Context, chan struct{})
-
 // Handler handle a func with timeout
 func Handler(timeout time.Duration, timeoutMsg string, handler gin.HandlerFunc) gin.HandlerFunc {
-	handlerRoutine := func(c *gin.Context, done chan struct{}) {
-		handler(c)
-		close(done)
-	}
-	return timeoutHandlerFunc(timeout, timeoutMsg, handlerRoutine)
+	return timeoutHandlerFunc(timeout, timeoutMsg, handler)
 }
 
 // Middleware handles timeout exception
 func Middleware(timeout time.Duration, timeoutMsg string) gin.HandlerFunc {
-	handlerRoutine := func(c *gin.Context, done chan struct{}) {
+	handler := func(c *gin.Context) {
 		c.Next()
-		close(done)
 	}
-	return timeoutHandlerFunc(timeout, timeoutMsg, handlerRoutine)
+	return timeoutHandlerFunc(timeout, timeoutMsg, handler)
 }
 
-func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routineHandlerFunc) gin.HandlerFunc {
+func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// if gin framework already run serverError, this is no need
+		if c.Writer.Written() {
+			return
+		}
 		if c.Writer.Status() != 200 {
 			return
 		}
 
+		// ensure write response before middleware exit
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		defer wg.Wait()
+
 		ctx := c.Request.Context()
 		timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
 
 		w := c.Writer
 		done := make(chan struct{})
+		defer close(done)
 
-		cancelCtx, cancel := context.WithCancel(timeoutCtx)
-		defer cancel()
-
-		c.Request = c.Request.WithContext(cancelCtx)
+		c.Request = c.Request.WithContext(timeoutCtx)
 		tw := &timeoutWriter{
-			ResponseWriter: c.Writer,
+			ResponseWriter: w,
 			h:              make(http.Header),
 			req:            c.Request,
 		}
 		c.Writer = tw
 
 		go func() {
+			defer cancel()
+			defer wg.Done()
 			select {
 			case <-done:
-				tw.mu.Lock()
-				defer tw.mu.Unlock()
+				tw.Lock()
+				defer tw.Unlock()
 
 				dst := w.Header()
 				for k, vv := range tw.h {
@@ -81,15 +81,15 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routin
 				w.WriteHeader(tw.code)
 				w.Write(tw.wbuf.Bytes())
 			case <-timeoutCtx.Done():
-				tw.mu.Lock()
-				defer tw.mu.Unlock()
+				tw.Lock()
+				defer tw.Unlock()
 				w.WriteHeader(http.StatusGatewayTimeout)
 				w.WriteString(timeoutMsg)
 				tw.timedOut = true
 			}
 		}()
 
-		handler(c, done)
+		handler(c)
 	}
 }
 
@@ -99,17 +99,21 @@ type timeoutWriter struct {
 	h    http.Header
 	wbuf bytes.Buffer
 
-	mu          sync.Mutex
+	sync.RWMutex
 	timedOut    bool
 	wroteHeader bool
 	code        int
 }
 
-func (tw *timeoutWriter) Header() http.Header { return tw.h }
+func (tw *timeoutWriter) Header() http.Header {
+	tw.RLock()
+	defer tw.RUnlock()
+	return tw.h
+}
 
 func (tw *timeoutWriter) Write(p []byte) (int, error) {
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
+	tw.Lock()
+	defer tw.Unlock()
 	if tw.timedOut {
 		// TODO: 超时处理时间记录
 		// 返回error会导致panic，暂时不返回error，后期可以考虑在panic中记录超时处理时间
@@ -140,6 +144,8 @@ func (tw *timeoutWriter) writeHeaderLocked(code int) {
 }
 
 func (tw *timeoutWriter) Status() int {
+	tw.RLock()
+	defer tw.RUnlock()
 	if tw.code != 0 {
 		return tw.code
 	}
@@ -147,28 +153,32 @@ func (tw *timeoutWriter) Status() int {
 }
 
 func (tw *timeoutWriter) Size() int {
+	tw.RLock()
+	defer tw.RUnlock()
 	return tw.wbuf.Len()
 }
 
 func (tw *timeoutWriter) Wroten() bool {
+	tw.RLock()
+	defer tw.RUnlock()
 	return tw.wroteHeader
 }
 
 func (tw *timeoutWriter) WriteHeader(code int) {
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
+	tw.Lock()
+	defer tw.Unlock()
 	tw.writeHeaderLocked(code)
 }
 
 func (tw *timeoutWriter) WriteHeaderNow() {
-	if !tw.wroteHeader {
+	if !tw.Wroten() {
 		tw.WriteHeader(tw.code)
 	}
 }
 
 func (tw *timeoutWriter) WriteString(s string) (n int, err error) {
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
+	tw.Lock()
+	defer tw.Unlock()
 	return tw.wbuf.WriteString(s)
 
 }
