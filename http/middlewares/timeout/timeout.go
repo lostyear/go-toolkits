@@ -15,21 +15,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	timeoutStatus = http.StatusGatewayTimeout
+	timeoutMsg    = `{"status":504,"message":"Timeout"}`
+
+	clientCancelStatus = 499
+	clientCancelMsg    = "client canceled"
+)
+
+func SetTimeoutStatus(status int) {
+	timeoutStatus = status
+}
+
+func SetTimeoutMessage(msg string) {
+	timeoutMsg = msg
+}
+
 // Handler handle a func with timeout
-func Handler(timeout time.Duration, timeoutMsg string, handler gin.HandlerFunc) gin.HandlerFunc {
-	return timeoutHandlerFunc(timeout, timeoutMsg, handler)
+func Handler(timeout time.Duration, handler gin.HandlerFunc) gin.HandlerFunc {
+	return timeoutHandlerFunc(timeout, handler)
 }
 
 // Middleware handles timeout exception
-func Middleware(timeout time.Duration, timeoutMsg string) gin.HandlerFunc {
+func Middleware(timeout time.Duration) gin.HandlerFunc {
 	handler := func(c *gin.Context) {
 		c.Next()
 	}
-	return timeoutHandlerFunc(timeout, timeoutMsg, handler)
+	return timeoutHandlerFunc(timeout, handler)
 }
 
-func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler gin.HandlerFunc) gin.HandlerFunc {
+func timeoutHandlerFunc(timeout time.Duration, handler gin.HandlerFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		startTs := time.Now()
 		// if gin framework already run serverError, this is no need
 		if c.Writer.Written() {
 			return
@@ -38,17 +55,13 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler gin.Ha
 			return
 		}
 
-		// ensure write response before middleware exit
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		defer wg.Wait()
-
 		ctx := c.Request.Context()
 		timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
 		w := c.Writer
 		done := make(chan struct{})
-		defer close(done)
+		panicCh := make(chan interface{})
 
 		c.Request = c.Request.WithContext(timeoutCtx)
 		tw := &timeoutWriter{
@@ -59,37 +72,52 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler gin.Ha
 		c.Writer = tw
 
 		go func() {
-			defer cancel()
-			defer wg.Done()
-			select {
-			case <-done:
-				tw.Lock()
-				defer tw.Unlock()
-
-				dst := w.Header()
-				for k, vv := range tw.h {
-					dst[k] = vv
+			defer func() {
+				if err := recover(); err != nil {
+					panicCh <- err
 				}
-
-				if !tw.wroteHeader {
-					if w.Status() > 0 {
-						tw.code = w.Status()
-					} else {
-						tw.code = http.StatusOK
-					}
-				}
-				w.WriteHeader(tw.code)
-				w.Write(tw.wbuf.Bytes())
-			case <-timeoutCtx.Done():
-				tw.Lock()
-				defer tw.Unlock()
-				w.WriteHeader(http.StatusGatewayTimeout)
-				w.WriteString(timeoutMsg)
-				tw.timedOut = true
-			}
+			}()
+			defer close(done)
+			handler(c)
 		}()
 
-		handler(c)
+		select {
+		case <-done:
+			tw.Lock()
+			defer tw.Unlock()
+
+			dst := w.Header()
+			for k, vv := range tw.h {
+				dst[k] = vv
+			}
+
+			if !tw.wroteHeader {
+				if w.Status() > 0 {
+					tw.code = w.Status()
+				} else {
+					tw.code = http.StatusOK
+				}
+			}
+			w.WriteHeader(tw.code)
+			w.Write(tw.wbuf.Bytes())
+		case <-timeoutCtx.Done():
+			latency := time.Since(startTs)
+			if latency < timeout {
+				tw.code = clientCancelStatus
+				tw.wbuf.Reset()
+				tw.wbuf.WriteString(clientCancelMsg)
+			} else {
+				tw.code = timeoutStatus
+				tw.wbuf.Reset()
+				tw.wbuf.WriteString(timeoutMsg)
+			}
+			tw.Lock()
+			defer tw.Unlock()
+			w.WriteHeader(tw.code)
+			w.Write(tw.wbuf.Bytes())
+			tw.timedOut = true
+		}
+
 	}
 }
 

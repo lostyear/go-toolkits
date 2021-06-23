@@ -1,11 +1,11 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/fvbock/endless"
 	"github.com/gin-gonic/gin"
 
 	"github.com/lostyear/go-toolkits/http/middlewares/n9emetric"
@@ -36,21 +36,20 @@ type Config struct {
 }
 
 var (
+	srv *http.Server
+
 	emptyHandler = func(*gin.Context) {}
 )
 
 // StartHTTPServer run http server with config, handler should have all route regist action,
 // and all middlewares will be used.
 // also it has some default middlewares use
-func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.HandlersChain) {
+func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.HandlersChain) error {
 	eng := gin.New()
 
 	eng.Use(GetMetricMiddleWare(cfg.Metric))
 	eng.Use(requestlog.RequestFileLogMiddleware(cfg.LogPath, cfg.LogRotationHours, cfg.LogMaxDays))
-	eng.Use(timeout.Middleware(
-		time.Duration(cfg.HTTPTimeoutMilliseSecond)*time.Millisecond,
-		`{"status":504,"message":"Timeout"}`,
-	))
+	eng.Use(timeout.Middleware(time.Duration(cfg.HTTPTimeoutMilliseSecond) * time.Millisecond))
 	eng.Use(recovery.Recovery())
 
 	eng.Use(middlewares...)
@@ -59,22 +58,21 @@ func StartHTTPServer(cfg Config, handler RegisterHandler, middlewares gin.Handle
 
 	handler(eng)
 
-	GracefulRun(
-		eng,
-		cfg.Listen,
-		time.Duration(cfg.ReadTimeoutMilliseSecond)*time.Millisecond,
-		time.Duration(cfg.WriteTimeoutMilliseSecond)*time.Millisecond,
-	)
+	srv = &http.Server{
+		Addr:         cfg.Listen,
+		Handler:      eng,
+		ReadTimeout:  time.Duration(cfg.ReadTimeoutMilliseSecond) * time.Millisecond,
+		WriteTimeout: time.Duration(cfg.WriteTimeoutMilliseSecond) * time.Millisecond,
+	}
+
+	return srv.ListenAndServe()
 }
 
-// GracefulRun serve http server with graceful stop
-func GracefulRun(engine *gin.Engine, listenAddr string, readTimeout, writeTimeout time.Duration) {
-	endless.DefaultReadTimeOut = readTimeout
-	endless.DefaultWriteTimeOut = writeTimeout
+func StopServer(timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
-	//TODO: 信号处理函数，支持reload和restart
-
-	endless.ListenAndServe(listenAddr, engine)
+	return srv.Shutdown(ctx)
 }
 
 func noRouteHandler(c *gin.Context) {

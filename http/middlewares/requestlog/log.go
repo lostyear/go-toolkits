@@ -37,11 +37,12 @@ func RequestFileLogMiddleware(filePath string, rotationHours, maxDays uint) gin.
 // Formatter is gin log formatter
 func Formatter(params gin.LogFormatterParams) string {
 	return fmt.Sprintf(
-		"[access] %s\t%s\t[%s]\t%d\t%v\t%s\t%s\t%s\t[%s]\t[%s]\t%s\n",
+		"[access] %s\t%s\t[%s]\t%d\t%d\t%v\t%s\t%s\t%s\t[%s]\t[%s]\t%s\t%+v\n",
 		params.Request.Host,
 		params.ClientIP,
 		params.TimeStamp.Format(time.RFC3339Nano),
 		params.StatusCode,
+		params.BodySize,
 		params.Latency,
 		params.Method,
 		params.Path,
@@ -49,5 +50,6 @@ func Formatter(params gin.LogFormatterParams) string {
 		params.Request.Referer(),
 		params.Request.UserAgent(),
 		params.ErrorMessage,
+		params.Keys,
 	)
 }
