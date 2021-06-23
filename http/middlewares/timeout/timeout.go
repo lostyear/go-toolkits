@@ -43,13 +43,16 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routin
 		}
 
 		ctx := c.Request.Context()
-		ctx, cancelCtx := context.WithTimeout(ctx, timeout)
-		defer cancelCtx()
+		timeoutCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
 
 		w := c.Writer
 		done := make(chan struct{})
 
-		c.Request = c.Request.WithContext(ctx)
+		cancelCtx, cancel := context.WithCancel(timeoutCtx)
+		defer cancel()
+
+		c.Request = c.Request.WithContext(cancelCtx)
 		tw := &timeoutWriter{
 			ResponseWriter: c.Writer,
 			h:              make(http.Header),
@@ -77,7 +80,7 @@ func timeoutHandlerFunc(timeout time.Duration, timeoutMsg string, handler routin
 				}
 				w.WriteHeader(tw.code)
 				w.Write(tw.wbuf.Bytes())
-			case <-ctx.Done():
+			case <-timeoutCtx.Done():
 				tw.mu.Lock()
 				defer tw.mu.Unlock()
 				w.WriteHeader(http.StatusGatewayTimeout)
