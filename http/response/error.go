@@ -45,6 +45,15 @@ var (
 	ErrBadRequest = errors.New("Bad Request")
 )
 
+// NewSimpleError create a response which show internal server error
+func NewSimpleError(err error) HTTPError {
+	return httpError{
+		code:    http.StatusInternalServerError,
+		message: err.Error(),
+		err:     err,
+	}
+}
+
 // NewServerError create a response which show internal server error
 func NewServerError(msg string) HTTPError {
 	return httpError{
